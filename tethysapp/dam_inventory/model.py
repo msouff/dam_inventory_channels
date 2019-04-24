@@ -152,47 +152,46 @@ def assign_hydrograph_to_dam(dam_id, hydrograph_file):
     # Parse file
     hydro_points = []
 
-    try:
+    print('start**********************************')
+    print(hydrograph_file.readlines()[0].decode("utf-8"))
 
-        for line in hydrograph_file:
-            sline = line.split(',')
+    for line in hydrograph_file.readlines():
+        print('hola')
+        sline = line.decode("utf-8").split(',')
 
-            try:
-                time = int(sline[0])
-                flow = float(sline[1])
-                hydro_points.append(HydrographPoint(time=time, flow=flow))
-            except ValueError:
-                continue
 
-        if len(hydro_points) > 0:
-            Session = app.get_persistent_store_database('primary_db', as_sessionmaker=True)
-            session = Session()
+        time = int(sline[0])
+        flow = float(sline[1])
+        print(time,flow, '************************************')
+        hydro_points.append(HydrographPoint(time=time, flow=flow))
 
-            # Get dam object
-            dam = session.query(Dam).get(int(dam_id))
 
-            # Overwrite old hydrograph
-            hydrograph = dam.hydrograph
+    if len(hydro_points) > 0:
+        Session = app.get_persistent_store_database('primary_db', as_sessionmaker=True)
+        session = Session()
 
-            # Create new hydrograph if not assigned already
-            if not hydrograph:
-                hydrograph = Hydrograph()
-                dam.hydrograph = hydrograph
+        # Get dam object
+        dam = session.query(Dam).get(int(dam_id))
+        print(dam, '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
 
-            # Remove old points if any
-            for hydro_point in hydrograph.points:
-                session.delete(hydro_point)
+        # Overwrite old hydrograph
+        hydrograph = dam.hydrograph
 
-            # Assign points to hydrograph
-            hydrograph.points = hydro_points
+        # Create new hydrograph if not assigned already
+        if not hydrograph:
+            hydrograph = Hydrograph()
+            dam.hydrograph = hydrograph
 
-            # Persist to database
-            session.commit()
-            session.close()
+        # Remove old points if any
+        for hydro_point in hydrograph.points:
+            session.delete(hydro_point)
 
-    except Exception as e:
-        # Careful not to hide error. At the very least log it to the console
-        print(e)
-        return False
+        # Assign points to hydrograph
+        hydrograph.points = hydro_points
+
+        # Persist to database
+        session.commit()
+        session.close()
+
 
     return True

@@ -8,6 +8,10 @@ from .model import add_new_dam, get_all_dams, Dam, assign_hydrograph_to_dam
 from .app import DamInventory as app
 from .helpers import create_hydrograph
 
+from django.utils.safestring import mark_safe
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+
 
 @login_required()
 def home(request):
@@ -423,3 +427,58 @@ def hydrograph_ajax(request, dam_id):
     session.close()
     return render(request, 'dam_inventory/hydrograph_ajax.html', context)
 
+
+@login_required()
+def index(request):
+    return render(request, 'dam_inventory/index.html', {})
+
+
+@login_required()
+def room(request, room_name):
+    return render(request, 'dam_inventory/room.html', {
+        'room_name_json': mark_safe(json.dumps(room_name))
+    })
+
+
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.room_name = self.scope['url_route']['kwargs']['room_name']
+        self.room_group_name = 'chat_%s' % self.room_name
+
+        # Join room group
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+
+    # Receive message from WebSocket
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+
+        # Send message to room group
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': message
+            }
+        )
+
+    # Receive message from room group
+    async def chat_message(self, event):
+        message = event['message']
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({
+            'message': message
+        }))

@@ -2,6 +2,7 @@ from tethys_sdk.base import TethysAppBase, url_map_maker
 from tethys_sdk.app_settings import CustomSetting
 from tethys_sdk.app_settings import PersistentStoreDatabaseSetting
 from tethys_sdk.permissions import Permission, PermissionGroup
+from tethys_sdk.handoff import HandoffHandler
 
 
 class DamInventory(TethysAppBase):
@@ -54,8 +55,24 @@ class DamInventory(TethysAppBase):
             ),
             UrlMap(
                 name='hydrograph_ajax',
-                url='dam-inventory/hydrographs/{dam_id}/ajax',
+                url='dam-inventory/hydrographs/{dam_id}/ajax/',
                 controller='dam_inventory.controllers.hydrograph_ajax'
+            ),
+            UrlMap(
+                name='index',
+                url='index',
+                controller='dam_inventory.controllers.index',
+            ),
+            UrlMap(
+                name='room',
+                url='{room_name}',
+                controller='dam_inventory.controllers.room',
+            ),
+            UrlMap(
+                name='my-web-socket',
+                url='{room_name}',
+                controller='dam_inventory.controllers.ChatConsumer',
+                protocol='websocket'
             ),
         )
 
@@ -108,3 +125,13 @@ class DamInventory(TethysAppBase):
         permissions = (admin,)
 
         return permissions
+
+    def handoff_handlers(self):
+        """
+        Register some handoff handlers
+        """
+        handoff_handlers = (HandoffHandler(name='internal-plot-csv',
+                                           handler='dam_inventory.handoff.csv_internal',
+                                           internal=False),
+        )
+        return handoff_handlers
