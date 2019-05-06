@@ -1,8 +1,8 @@
 from django.shortcuts import render, reverse, redirect
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from tethys_sdk.gizmos import MapView, Button, TextInput, DatePicker, SelectInput, DataTableView, MVDraw, MVView, MVLayer
-from tethys_sdk.permissions import permission_required, has_permission
+from tethys_sdk.permissions import has_permission
 
 from .model import add_new_dam, get_all_dams, Dam, assign_hydrograph_to_dam
 from .app import DamInventory as app

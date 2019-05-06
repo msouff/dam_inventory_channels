@@ -155,6 +155,7 @@ def assign_hydrograph_to_dam(dam_id, hydrograph_file):
     try:
 
         for line in hydrograph_file:
+            line = line.decode()
             sline = line.split(',')
 
             try:
